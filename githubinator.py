@@ -39,7 +39,7 @@ class GithubinatorCommand(sublime_plugin.TextCommand):
         folder_path, file_name = os.path.split(full_name)
 
         # Try to find a git directory
-        repo_folder_path, git_path = self.recurse_dir(folder_path, ".git")
+        repo_folder_path, git_path = self.get_git_path(folder_path)
         print('git_path: %s' % git_path)
         if not git_path:
             sublime.status_message("Could not find .git directory.")
@@ -167,7 +167,9 @@ class GithubinatorCommand(sublime_plugin.TextCommand):
 
         return sha, branch
 
-    def recurse_dir(self, folder_path, name):
+    def get_git_path(self, folder_path, name='.git'):
+        """Get .git folder for the folder_path repo."""
+
         items = os.listdir(folder_path)
         if name in items:
             path = os.path.join(folder_path, name)
@@ -183,7 +185,7 @@ class GithubinatorCommand(sublime_plugin.TextCommand):
         dirname = os.path.dirname(folder_path)
         if dirname == folder_path:
             return None
-        return self.recurse_dir(dirname, name)
+        return self.get_git_path(dirname, name)
 
     def is_enabled(self):
         if self.view.file_name() and len(self.view.file_name()) > 0:
