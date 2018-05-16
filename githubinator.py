@@ -57,7 +57,7 @@ class GithubinatorCommand(sublime_plugin.TextCommand):
         with codecs.open(git_config_path, "r", "utf-8") as git_config_file:
             config = git_config_file.read()
 
-        import pdb, sys; pdb.Pdb(stdout=sys.__stdout__).set_trace()
+        # import pdb, sys; pdb.Pdb(stdout=sys.__stdout__).set_trace()
 
         # Figure out the host
         scheme = "https"
