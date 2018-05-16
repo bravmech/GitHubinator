@@ -36,15 +36,16 @@ class GithubinatorCommand(sublime_plugin.TextCommand):
 
         # The current file
         full_name = os.path.realpath(self.view.file_name())
-        folder_name, file_name = os.path.split(full_name)
+        folder_path, file_name = os.path.split(full_name)
 
         # Try to find a git directory
-        git_path = self.recurse_dir(folder_name, ".git")
+        repo_folder_path, git_path = self.recurse_dir(folder_path, ".git")
+        print('git_path: %s' % git_path)
         if not git_path:
             sublime.status_message("Could not find .git directory.")
             return
 
-        new_git_path = folder_name[len(git_path):]
+        new_git_path = folder_path[len(repo_folder_path):]
 
         # path names normalize for UNC styling
         if os.name == "nt":
@@ -52,9 +53,11 @@ class GithubinatorCommand(sublime_plugin.TextCommand):
             file_name = file_name.replace("\\", "/")
 
         # Read the config file in .git
-        git_config_path = os.path.join(git_path, ".git", "config")
+        git_config_path = os.path.join(git_path, "config")
         with codecs.open(git_config_path, "r", "utf-8") as git_config_file:
             config = git_config_file.read()
+
+        import pdb, sys; pdb.Pdb(stdout=sys.__stdout__).set_trace()
 
         # Figure out the host
         scheme = "https"
@@ -139,11 +142,12 @@ class GithubinatorCommand(sublime_plugin.TextCommand):
     def get_git_status(git_path):
         """Get the current branch and SHA from git."""
 
-        with open(os.path.join(git_path, ".git", "HEAD"), "r") as f:
+        ref_path = os.path.join(git_path, "HEAD")
+        with open(ref_path, "r") as f:
             ref = f.read().replace("ref: ", "")[:-1]
 
         sha = None
-        packed_ref_path = os.path.join(git_path, ".git", "packed-refs")
+        packed_ref_path = os.path.join(git_path, "packed-refs")
 
         if os.path.isfile(packed_ref_path):
             with codecs.open(packed_ref_path, "r", "utf-8") as f:
@@ -155,23 +159,31 @@ class GithubinatorCommand(sublime_plugin.TextCommand):
                 except UnicodeDecodeError:
                     None
 
-
         if not sha:
-            with open(os.path.join(git_path, ".git", ref), "r") as f:
+            with open(os.path.join(git_path, ref), "r") as f:
                 sha = f.read()[:-1]
 
         branch = ref.replace("refs/heads/", "")
 
         return sha, branch
 
-    def recurse_dir(self, path, folder):
-        items = os.listdir(path)
-        if folder in items and os.path.isdir(os.path.join(path, folder)):
-            return path
-        dirname = os.path.dirname(path)
-        if dirname == path:
+    def recurse_dir(self, folder_path, name):
+        items = os.listdir(folder_path)
+        if name in items:
+            path = os.path.join(folder_path, name)
+            if os.path.isdir(path):
+                return folder_path, path
+            if os.path.isfile(path):
+                with open(path) as f:
+                    text = f.read()
+                    m = re.search(r'gitdir:\s+(.+)', text)
+                    if m:
+                        return folder_path, os.path.join(folder_path, m.group(1))
+
+        dirname = os.path.dirname(folder_path)
+        if dirname == folder_path:
             return None
-        return self.recurse_dir(dirname, folder)
+        return self.recurse_dir(dirname, name)
 
     def is_enabled(self):
         if self.view.file_name() and len(self.view.file_name()) > 0:
