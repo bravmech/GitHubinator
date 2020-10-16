@@ -16,6 +16,7 @@ class GithubinatorCommand(sublime_plugin.TextCommand):
     This will allow you to highlight your code, activate the plugin, then see the
     highlighted results on GitHub/Bitbucket.
     """
+
     DEFAULT_GIT_REMOTE = "origin"
     DEFAULT_HOST = "github.com"
 
@@ -45,7 +46,7 @@ class GithubinatorCommand(sublime_plugin.TextCommand):
             sublime.status_message("Could not find .git directory.")
             return
 
-        new_git_path = folder_path[len(repo_folder_path):]
+        new_git_path = folder_path[len(repo_folder_path) :]
 
         # path names normalize for UNC styling
         if os.name == "nt":
@@ -87,8 +88,7 @@ class GithubinatorCommand(sublime_plugin.TextCommand):
             matches = result.groups()
             detected_remote = [matches[0]]
 
-        for remote in (detected_remote or self.default_remote):
-
+        for remote in detected_remote or self.default_remote:
             regex = r".*\s.*(?:https?://%s/|%s:|git://%s/)(.*)/(.*?)(?:\.git)?\r?\n" % (re_host, re_host, re_host)
             result = re.search(remote + regex, config)
             if not result:
@@ -108,12 +108,10 @@ class GithubinatorCommand(sublime_plugin.TextCommand):
                 if "bitbucket" in self.default_host:
                     mode = "src" if mode == "blob" else "annotate"
                     lines = ":".join([str(l) for l in lines])
-                    full_link = repo_link + "%s/%s%s/%s#cl-%s" % \
-                        (mode, sha, new_git_path, file_name, lines)
+                    full_link = repo_link + "%s/%s%s/%s#cl-%s" % (mode, sha, new_git_path, file_name, lines)
                 else:
                     lines = "-".join("L%s" % line for line in lines)
-                    full_link = repo_link + "%s/%s%s/%s#%s" % \
-                        (mode, target, new_git_path, file_name, lines)
+                    full_link = repo_link + "%s/%s%s/%s#%s" % (mode, target, new_git_path, file_name, lines)
 
             full_link = quote(full_link, safe=':/#@')
 
